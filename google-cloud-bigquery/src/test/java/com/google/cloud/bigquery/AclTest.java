@@ -26,6 +26,7 @@ import com.google.cloud.bigquery.Acl.Group;
 import com.google.cloud.bigquery.Acl.Role;
 import com.google.cloud.bigquery.Acl.User;
 import com.google.cloud.bigquery.Acl.View;
+import com.google.cloud.bigquery.Acl.IamMember;
 import org.junit.Test;
 
 public class AclTest {
@@ -52,12 +53,20 @@ public class AclTest {
   public void testSpecialGroupEntity() {
     Group entity = Group.ofAllAuthenticatedUsers();
     assertEquals("allAuthenticatedUsers", entity.getIdentifier());
+    Dataset.Access pb = entity.toPb();
+    assertEquals(entity, Entity.fromPb(pb));
     entity = Group.ofProjectWriters();
     assertEquals("projectWriters", entity.getIdentifier());
+    pb = entity.toPb();
+    assertEquals(entity, Entity.fromPb(pb));
     entity = Group.ofProjectReaders();
     assertEquals("projectReaders", entity.getIdentifier());
+    pb = entity.toPb();
+    assertEquals(entity, Entity.fromPb(pb));
     entity = Group.ofProjectOwners();
     assertEquals("projectOwners", entity.getIdentifier());
+    pb = entity.toPb();
+    assertEquals(entity, Entity.fromPb(pb));
   }
 
   @Test
@@ -75,6 +84,14 @@ public class AclTest {
     View entity = new View(viewId);
     assertEquals(viewId, entity.getId());
     assertEquals(Type.VIEW, entity.getType());
+    Dataset.Access pb = entity.toPb();
+    assertEquals(entity, Entity.fromPb(pb));
+  }
+
+  @Test
+  public void testIamMemberEntity() {
+    IamMember entity = new IamMember("member1");
+    assertEquals("member1", entity.getIamMember());
     Dataset.Access pb = entity.toPb();
     assertEquals(entity, Entity.fromPb(pb));
   }
