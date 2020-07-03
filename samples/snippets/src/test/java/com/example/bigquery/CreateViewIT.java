@@ -20,8 +20,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.TestCase.assertNotNull;
 
 import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
+import com.google.cloud.bigquery.StandardSQLTypeName;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.UUID;
@@ -30,16 +30,21 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class AddEmptyColumnIT {
+public class CreateViewIT {
+
+  private String tableName;
+  private String viewName;
   private ByteArrayOutputStream bout;
   private PrintStream out;
 
-  private static final String BIGQUERY_DATASET_NAME = System.getenv("BIGQUERY_DATASET_NAME");
+  private static final String BIGQUERY_DATASET_NAME = requireEnvVar("BIGQUERY_DATASET_NAME");
 
-  private static void requireEnvVar(String varName) {
+  private static String requireEnvVar(String varName) {
+    String value = System.getenv(varName);
     assertNotNull(
         "Environment variable " + varName + " is required to perform these tests.",
         System.getenv(varName));
+    return value;
   }
 
   @BeforeClass
@@ -48,7 +53,21 @@ public class AddEmptyColumnIT {
   }
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
+    bout = new ByteArrayOutputStream();
+    out = new PrintStream(bout);
+    System.setOut(out);
+
+    tableName = "MY_TABLE_NAME_TEST_" + UUID.randomUUID().toString().substring(0, 8);
+    viewName = "MY_VIEW_NAME_TEST_" + UUID.randomUUID().toString().substring(0, 8);
+
+    Schema schema =
+        Schema.of(
+            Field.of("timestampField", StandardSQLTypeName.TIMESTAMP),
+            Field.of("stringField", StandardSQLTypeName.STRING),
+            Field.of("booleanField", StandardSQLTypeName.BOOL));
+    CreateTable.createTable(BIGQUERY_DATASET_NAME, tableName, schema);
+
     bout = new ByteArrayOutputStream();
     out = new PrintStream(bout);
     System.setOut(out);
@@ -56,22 +75,19 @@ public class AddEmptyColumnIT {
 
   @After
   public void tearDown() {
+    // Clean up
+    DeleteTable.deleteTable(BIGQUERY_DATASET_NAME, viewName);
+    DeleteTable.deleteTable(BIGQUERY_DATASET_NAME, tableName);
     System.setOut(null);
   }
 
   @Test
-  public void addEmptyColumn() {
-    String tableName = "AddEmptyColumnTestTable_" + UUID.randomUUID().toString().replace('-', '_');
-    Schema schema =
-        Schema.of(
-            Field.of("booleanField", LegacySQLTypeName.BOOLEAN),
-            Field.of("numericField", LegacySQLTypeName.NUMERIC));
-
-    // Create table in dataset for testing
-    CreateTable.createTable(BIGQUERY_DATASET_NAME, tableName, schema);
-
-    String randomColumnName = "new_" + UUID.randomUUID().toString().replace('-', '_');
-    AddEmptyColumn.addEmptyColumn(randomColumnName, BIGQUERY_DATASET_NAME, tableName);
-    assertThat(bout.toString()).contains("Empty column successfully added to table");
+  public void testCreateView() {
+    String query =
+        String.format(
+            "SELECT timestampField, stringField, booleanField FROM %s.%s",
+            BIGQUERY_DATASET_NAME, tableName);
+    CreateView.createView(BIGQUERY_DATASET_NAME, viewName, query);
+    assertThat(bout.toString()).contains("View created successfully");
   }
 }

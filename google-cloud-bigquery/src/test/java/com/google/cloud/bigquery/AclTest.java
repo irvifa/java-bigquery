@@ -23,6 +23,7 @@ import com.google.cloud.bigquery.Acl.Domain;
 import com.google.cloud.bigquery.Acl.Entity;
 import com.google.cloud.bigquery.Acl.Entity.Type;
 import com.google.cloud.bigquery.Acl.Group;
+import com.google.cloud.bigquery.Acl.IamMember;
 import com.google.cloud.bigquery.Acl.Role;
 import com.google.cloud.bigquery.Acl.User;
 import com.google.cloud.bigquery.Acl.View;

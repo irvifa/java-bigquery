@@ -16,7 +16,7 @@
 
 package com.example.bigquery;
 
-// [START bigquery_create_job]
+// [START bigquery_cancel_job]
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
@@ -24,29 +24,25 @@ import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobId;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.QueryJobConfiguration;
-import com.google.common.collect.ImmutableMap;
 import java.util.UUID;
 
-// Sample to create a job
-public class CreateJob {
+// Sample to cancel a job
+public class CancelJob {
 
-  public static void runCreateJob() {
+  public static void runCancelJob() {
     // TODO(developer): Replace these variables before running the sample.
     String query = "SELECT country_name from `bigquery-public-data.utility_us.country_code_iso`";
-    createJob(query);
+    cancelJob(query);
   }
 
-  public static void createJob(String query) {
+  public static void cancelJob(String query) {
     try {
       // Initialize client that will be used to send requests. This client only needs to be created
       // once, and can be reused for multiple requests.
       BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
 
       // Specify a job configuration to set optional job resource properties.
-      QueryJobConfiguration queryConfig =
-          QueryJobConfiguration.newBuilder(query)
-              .setLabels(ImmutableMap.of("example-label", "example-value"))
-              .build();
+      QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
 
       // The location and job name are optional,
       // if both are not specified then client will auto-create.
@@ -58,14 +54,14 @@ public class CreateJob {
 
       // Get a job that was just created
       Job job = bigquery.getJob(jobId);
-      if (job.getJobId().getJob().equals(jobId.getJob())) {
-        System.out.print("Job created successfully." + job.getJobId().getJob());
+      if (job.cancel()) {
+        System.out.println("Job canceled successfully");
       } else {
-        System.out.print("Job was not created");
+        System.out.println("Job was not canceled");
       }
     } catch (BigQueryException e) {
-      System.out.print("Job was not created. \n" + e.toString());
+      System.out.println("Job was not canceled.\n" + e.toString());
     }
   }
 }
-// [END bigquery_create_job]
+// [END bigquery_cancel_job]

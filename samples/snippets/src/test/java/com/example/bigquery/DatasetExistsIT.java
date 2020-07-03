@@ -19,9 +19,6 @@ package com.example.bigquery;
 import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.TestCase.assertNotNull;
 
-import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.LegacySQLTypeName;
-import com.google.cloud.bigquery.Schema;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.UUID;
@@ -30,25 +27,36 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class AddEmptyColumnIT {
+public class DatasetExistsIT {
+
+  private String datasetName;
   private ByteArrayOutputStream bout;
   private PrintStream out;
 
-  private static final String BIGQUERY_DATASET_NAME = System.getenv("BIGQUERY_DATASET_NAME");
+  private static final String PROJECT_ID = requireEnvVar("GOOGLE_CLOUD_PROJECT");
 
-  private static void requireEnvVar(String varName) {
+  private static String requireEnvVar(String varName) {
+    String value = System.getenv(varName);
     assertNotNull(
         "Environment variable " + varName + " is required to perform these tests.",
         System.getenv(varName));
+    return value;
   }
 
   @BeforeClass
   public static void checkRequirements() {
-    requireEnvVar("BIGQUERY_DATASET_NAME");
+    requireEnvVar("GOOGLE_CLOUD_PROJECT");
   }
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
+    bout = new ByteArrayOutputStream();
+    out = new PrintStream(bout);
+    System.setOut(out);
+    // create a temporary dataset
+    datasetName = "MY_DATASET_TEST_" + UUID.randomUUID().toString().substring(0, 8);
+    CreateDataset.createDataset(datasetName);
+
     bout = new ByteArrayOutputStream();
     out = new PrintStream(bout);
     System.setOut(out);
@@ -56,22 +64,14 @@ public class AddEmptyColumnIT {
 
   @After
   public void tearDown() {
+    // delete a temporary dataset
+    DeleteDataset.deleteDataset(PROJECT_ID, datasetName);
     System.setOut(null);
   }
 
   @Test
-  public void addEmptyColumn() {
-    String tableName = "AddEmptyColumnTestTable_" + UUID.randomUUID().toString().replace('-', '_');
-    Schema schema =
-        Schema.of(
-            Field.of("booleanField", LegacySQLTypeName.BOOLEAN),
-            Field.of("numericField", LegacySQLTypeName.NUMERIC));
-
-    // Create table in dataset for testing
-    CreateTable.createTable(BIGQUERY_DATASET_NAME, tableName, schema);
-
-    String randomColumnName = "new_" + UUID.randomUUID().toString().replace('-', '_');
-    AddEmptyColumn.addEmptyColumn(randomColumnName, BIGQUERY_DATASET_NAME, tableName);
-    assertThat(bout.toString()).contains("Empty column successfully added to table");
+  public void testDatasetExists() {
+    DatasetExists.datasetExists(datasetName);
+    assertThat(bout.toString()).contains("Dataset already exist");
   }
 }
